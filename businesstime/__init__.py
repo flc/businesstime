@@ -117,8 +117,7 @@ class BusinessTime(object):
 
     def businesstimedelta(self, d1, d2):
         """
-        Returns a datetime.timedelta with the number of full business days
-        and business time between d1 and d2
+        Returns a datetime.timedelta with business time between d1 and d2
         """
         businessdays = self._build_spanning_datetimes(d1, d2)
         time = datetime.timedelta()
@@ -127,6 +126,8 @@ class BusinessTime(object):
             # HACK: manually handle the case when d1 is after business hours while d2 is during
             if self.isduringbusinesshours(d2):
                 time += d2 - datetime.datetime.combine(d2, self.business_hours[0])
+            elif d2.time() > self.business_hours[1] and d1.time() < self.business_hours[0]:
+                time += self.open_hours
         else:
             prev = None
             current = None
@@ -137,11 +138,13 @@ class BusinessTime(object):
                 current = datetime.datetime.combine(d, current.time())
                 if prev is not None:
                     if prev.date() != current.date():
-                        time += datetime.timedelta(days=1)
+                        # time += datetime.timedelta(days=1)
+                        time += self.open_hours
                     if count == len(businessdays) - 1:
                         if current > d:
                             # We went too far
-                            time -= datetime.timedelta(days=1)
+                            # time -= datetime.timedelta(days=1)
+                            time -= self.open_hours
                             time += self.open_hours - (current - d)
                         else:
                             time += d - current
